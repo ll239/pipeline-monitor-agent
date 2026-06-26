@@ -1,13 +1,18 @@
 import json
-import os
 from datetime import datetime
 from anthropic import Anthropic
 from dotenv import load_dotenv
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../db"))
+
+from connection import load_config, get_connection
 
 load_dotenv()
 
 LOG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../logs/incident_reports.json")
 anthropic_client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+config = load_config()
 
 def generate_report(check_results, remediation_results):
     os.makedirs(os.path.dirname(LOG_PATH), exist_ok=True)
@@ -25,9 +30,9 @@ Failed checks: {json.dumps(failed_checks, indent=2)}
 Remediation actions: {json.dumps(remediation_results, indent=2)}"""
 
         response = anthropic_client.messages.create(
-            model="claude-sonnet-4-5",
-            max_tokens=200,
-            messages=[{"role": "user", "content": prompt}]
+            model = config.get("llm", {}).get("model", "claude-sonnet-4-6"),
+            max_tokens = config.get("llm", {}).get("max_tokens", 1000),
+            messages=[{"role": "user", "content": prompt}],
         )
         llm_summary = response.content[0].text.strip()
     else:

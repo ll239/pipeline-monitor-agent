@@ -1,7 +1,11 @@
 import sqlite3
-import os
+
 import yaml
 import os
+import sys
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../db"))
+
+from connection import get_connection, get_table_config, get_check_config, get_table_names
 
 CONFIG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../monitor_config.yaml")
 
@@ -184,68 +188,68 @@ def check_value_range(table="sales_events", column="revenue", min_val=0, max_val
     }
 
 
-def run_all_checks():
-    config = load_config()
-    table_config = config["tables"][0]  # first table for now
-    checks_config = table_config["checks"]
-    table_name = table_config["name"]
+def run_all_checks(table_name=None):
+    # if no table specified, check all tables in config
+    if table_name:
+        tables = [get_table_config(table_name)]
+    else:
+        tables = [get_table_config(t) for t in get_table_names()]
 
-    results = []
+    all_results = []
 
-    # null rate
-    if checks_config["null_rate"]["enabled"]:
-        results.append(check_null_rate(
-            table=table_name,
-            column=checks_config["null_rate"]["column"],
-            threshold=checks_config["null_rate"]["threshold"]
-        ))
+    for table_config in tables:
+        tname = table_config["name"]
+        checks = table_config["checks"]
 
-    # row count
-    if checks_config["row_count"]["enabled"]:
-        results.append(check_row_count(
-            table=table_name,
-            min_expected=checks_config["row_count"]["min_expected"]
-        ))
+        print(f"\n--- Checking table: {tname} ---")
 
-    # schema drift
-    if checks_config["schema_drift"]["enabled"]:
-        results.append(check_schema(
-            table=table_name,
-            expected_columns=set(checks_config["schema_drift"]["expected_columns"])
-        ))
+        if checks.get("null_rate", {}).get("enabled"):
+            all_results.append(check_null_rate(
+                table=tname,
+                column=checks["null_rate"]["column"],
+                threshold=checks["null_rate"]["threshold"]
+            ))
 
-    # duplicate check
-    if checks_config["duplicate_check"]["enabled"]:
-        results.append(check_duplicates(
-            table=table_name,
-            column=checks_config["duplicate_check"]["column"],
-            threshold=checks_config["duplicate_check"]["threshold"]
-        ))
+        if checks.get("row_count", {}).get("enabled"):
+            all_results.append(check_row_count(
+                table=tname,
+                min_expected=checks["row_count"]["min_expected"]
+            ))
 
-    # freshness check
-    if checks_config["freshness_check"]["enabled"]:
-        results.append(check_freshness(
-            table=table_name,
-            timestamp_column=checks_config["freshness_check"]["timestamp_column"],
-            max_hours=checks_config["freshness_check"]["max_hours_since_update"]
-        ))
+        if checks.get("schema_drift", {}).get("enabled"):
+            all_results.append(check_schema(
+                table=tname,
+                expected_columns=set(checks["schema_drift"]["expected_columns"])
+            ))
 
-    # value range check
-    if checks_config["value_range_check"]["enabled"]:
-        results.append(check_value_range(
-            table=table_name,
-            column=checks_config["value_range_check"]["column"],
-            min_val=checks_config["value_range_check"]["min_value"],
-            max_val=checks_config["value_range_check"]["max_value"]
-        ))
+        if checks.get("duplicate_check", {}).get("enabled"):
+            all_results.append(check_duplicates(
+                table=tname,
+                column=checks["duplicate_check"]["column"],
+                threshold=checks["duplicate_check"]["threshold"]
+            ))
+
+        if checks.get("freshness_check", {}).get("enabled"):
+            all_results.append(check_freshness(
+                table=tname,
+                timestamp_column=checks["freshness_check"]["timestamp_column"],
+                max_hours=checks["freshness_check"]["max_hours_since_update"]
+            ))
+
+        if checks.get("value_range_check", {}).get("enabled"):
+            all_results.append(check_value_range(
+                table=tname,
+                column=checks["value_range_check"]["column"],
+                min_val=checks["value_range_check"]["min_value"],
+                max_val=checks["value_range_check"]["max_value"]
+            ))
 
     print("\n--- Pipeline Health Checks ---")
-    for r in results:
+    for r in all_results:
         status = "✅ PASSED" if r["passed"] else "❌ FAILED"
-        print(f"{status} | {r['check']}")
+        print(f"{status} | {r['check']} | {r.get('table', '')}")
 
-    return results
-
+    return all_results
 
 if __name__ == "__main__":
     run_all_checks()

@@ -1,12 +1,16 @@
 import anthropic
 import json
-import os
 from dotenv import load_dotenv
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../db"))
+
+from connection import load_config, get_connection
 
 load_dotenv()
 
 client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
-
+config = load_config()
 def analyze_failures(check_results: list) -> str:
     failed_checks = [r for r in check_results if not r["passed"]]
 
@@ -26,8 +30,8 @@ For each failure:
 Be concise and practical. Respond as if you are writing an incident report for a data engineering team."""
 
     message = client.messages.create(
-        model="claude-sonnet-4-5",
-        max_tokens=1000,
+        model=config.get("llm", {}).get("model", "claude-sonnet-4-6"),
+        max_tokens=config.get("llm", {}).get("max_tokens", 1000),
         messages=[{"role": "user", "content": prompt}]
     )
 

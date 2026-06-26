@@ -84,3 +84,9 @@ alerts:
 logging:
   path: "logs/incident_reports.json"
   retention_days: 30
+
+# LLM Configuration
+llm:
+  model: "claude-sonnet-4-6"    # updated to latest
+  max_tokens: 1000
+  summary_sentences: 3           # how many sentences in incident summary
