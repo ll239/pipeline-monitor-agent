@@ -13,7 +13,8 @@ An AI-powered data pipeline monitoring system that detects quality issues, attem
 
 ## Architecture
 
-<img width="1024" height="1536" alt="ChatGPT Image Jun 26, 2026, 01_30_46 PM" src="https://github.com/user-attachments/assets/d3c4b643-c411-494e-9353-f76a16065bc2" />
+<img width="1024" height="1536" alt="ChatGPT Image Jun 26, 2026, 01_30_46 PM" src="https://github.com/user-attachments/assets/53f5ecc5-a6f4-4fcd-ba08-5202ee8093b8" />
+
 
 The system runs as an Airflow DAG every 6 hours with 4 tasks in sequence:
 
