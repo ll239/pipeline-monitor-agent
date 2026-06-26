@@ -111,9 +111,9 @@ drop it into their existing Airflow DAG with a single import and one line of cod
 ## Tech Stack
 
 - Python, SQLite, Apache Airflow
-- ChromaDB, Sentence Transformers
 - Anthropic Claude claude-sonnet-4-6
 - Astronomer Astro CLI
+- PyYAML
 
 ## Author
 
