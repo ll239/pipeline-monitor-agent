@@ -1,0 +1,10 @@
+anthropic
+sentence-transformers
+chromadb
+python-dotenv
+pyyaml
+apache-airflow
+nltk
+pandas
+loguru
+pytest

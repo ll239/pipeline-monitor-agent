@@ -1,0 +1,86 @@
+# Pipeline Monitor Agent — Configuration File
+# Edit this file to point the agent at your own pipeline
+
+pipeline:
+  name: "Sales Events Pipeline"
+  description: "Monitors daily sales transaction data"
+
+# Database connection
+connection:
+  type: sqlite
+  path: "db/pipeline.db"
+  # For Snowflake uncomment below:
+  # type: snowflake
+  # account: mycompany.snowflakecomputing.com
+  # database: PROD_DB
+  # schema: PUBLIC
+  # warehouse: COMPUTE_WH
+  # role: DATA_ENGINEER
+
+# Tables to monitor
+tables:
+  - name: sales_events
+    staging_table: sales_events_stg
+    production_table: sales_events_prod
+    checks:
+      null_rate:
+        enabled: true
+        column: revenue
+        threshold: 0.1
+        auto_remediate: true
+        escalation_threshold: 0.3
+
+      row_count:
+        enabled: true
+        min_expected: 400
+        auto_remediate: false
+
+      schema_drift:
+        enabled: true
+        auto_remediate: false
+        expected_columns:
+          - id
+          - event_time
+          - store_id
+          - product_id
+          - quantity
+          - revenue
+
+      duplicate_check:
+        enabled: true
+        column: id
+        threshold: 0.0
+        auto_remediate: true
+
+      freshness_check:
+        enabled: true
+        timestamp_column: event_time
+        max_hours_since_update: 24
+        auto_remediate: false
+
+      value_range_check:
+        enabled: true
+        column: revenue
+        min_value: 0
+        max_value: 999999
+        auto_remediate: true
+
+# Schedule
+schedule:
+  interval: "0 */6 * * *"
+  timezone: "America/New_York"
+
+# Alerting
+alerts:
+  email:
+    enabled: false
+    recipients:
+      - dataeng@mycompany.com
+  slack:
+    enabled: false
+    webhook_url: "https://hooks.slack.com/your-webhook-here"
+
+# Logging
+logging:
+  path: "logs/incident_reports.json"
+  retention_days: 30
